@@ -26,6 +26,9 @@ class ContactsHttp implements Contacts {
   }
 
   @override
+  Future<List<Contact>> listNames(String? name) => throw Exception('no http impl.');
+
+  @override
   Future<Contact> post(Contact? contact) async {
     final response = await http.post(Uri.http(_preference.httpHostURL, '/contacts/book'),
         headers: {'Content-type': 'application/json', 'Accept': 'application/json'}, 

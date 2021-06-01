@@ -27,6 +27,9 @@ class MeansHttp implements Means {
   }
 
   @override
+  Future<List<ContactMeans>> listNames(ContactMeans? contactMeans) async => throw Exception('no http impl.');
+
+  @override
   Future<ContactMeans> post(ContactMeans? contactMeans) async {
     final ContactMeans contactMeansCloned = ContactMeans.clone(contactMeans);
     contactMeansCloned.contact = Contact(contactMeans?.contact?.id, '', '');

@@ -1,8 +1,5 @@
 import 'package:flutter_poc/domain/entities/contact.dart';
 import 'package:flutter_poc/domain/entities/contact.means.dart';
-import 'package:flutter_poc/domain/exceptions/contact_means_main_removed_exception.dart';
-import 'package:flutter_poc/domain/exceptions/contact_means_name_equal_exception.dart';
-import 'package:flutter_poc/domain/exceptions/contact_means_single_removed_exception.dart';
 import 'package:flutter_poc/domain/repositories/means.dart';
 import 'package:flutter_poc/infrastructure/repositories/database/connection.dart';
 import 'package:injectable/injectable.dart';
@@ -13,6 +10,7 @@ import 'dart:async';
 @Singleton(as: Means)
 @Environment('local')
 class MeansSQLite implements Means {
+
   final Connection _connection;
 
   MeansSQLite(@Named('connection') this._connection);
@@ -34,8 +32,6 @@ class MeansSQLite implements Means {
   @override
   Future<ContactMeans> post(ContactMeans? contactMeans) async {
     final Database database = await _connection.connect;
-    final List<ContactMeans> meansListed = await _listNames(contactMeans);
-    if (meansListed.isNotEmpty) throw ContactMeansNameEqualException();
     if (contactMeans?.isMain??false) {
       await database.rawUpdate(_MeansSqliteSQL.UPDATE_MAIN_CONTACT, [false, contactMeans?.contact?.id]);
     }
@@ -44,7 +40,7 @@ class MeansSQLite implements Means {
     return ContactMeans(contactMeans?.id, contactMeans?.name, contactMeans?.value, '', contactMeans?.isMain);
   }
 
-  Future<List<ContactMeans>> _listNames(ContactMeans? contactMeans) async {
+  Future<List<ContactMeans>> listNames(ContactMeans? contactMeans) async {
     final Database database = await _connection.connect;
     final List<Map<String, dynamic>> meansMapped = await database.rawQuery(_MeansSqliteSQL.SELECT_NAME, 
         [contactMeans?.contact?.id, contactMeans?.name, contactMeans?.value]);
@@ -61,8 +57,6 @@ class MeansSQLite implements Means {
   @override
   Future<ContactMeans> put(ContactMeans? contactMeans) async {
     final Database database = await _connection.connect;
-    final List<ContactMeans> meansListed = await _listNames(contactMeans);
-    if (meansListed.isNotEmpty && meansListed.first.id != contactMeans?.id) throw ContactMeansNameEqualException();
     if (contactMeans?.isMain??false) {
       await database.rawUpdate(_MeansSqliteSQL.UPDATE_MAIN_CONTACT, [false, contactMeans?.contact?.id]);
     }
@@ -74,9 +68,6 @@ class MeansSQLite implements Means {
 
   @override
   Future<bool> remove(ContactMeans? contactMeans) async {
-    bool isMeansMoreThanOne = (contactMeans?.contact?.means?.length ?? 0) > 1;
-    if (isMeansMoreThanOne && (contactMeans?.isMain??false)) throw ContactMeansMainRemovedException();
-    if (contactMeans?.contact?.isSingleContactMeans()??false) throw ContactMeansSingleRemovedException();
     final Database database = await _connection.connect;
     final int rowsEffected = await database.rawDelete(_MeansSqliteSQL.DELETE, [contactMeans?.id]);
     return rowsEffected > 0;

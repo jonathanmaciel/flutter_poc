@@ -1,6 +1,5 @@
 import 'package:flutter_poc/domain/entities/contact.dart';
 import 'package:flutter_poc/domain/entities/contact.means.dart';
-import 'package:flutter_poc/domain/exceptions/contact_name_equal_exception.dart';
 import 'package:flutter_poc/domain/repositories/contacts.dart';
 import 'package:flutter_poc/domain/repositories/means.dart';
 import 'package:flutter_poc/infrastructure/repositories/database/connection.dart';
@@ -42,8 +41,6 @@ class ContactSQLite implements Contacts {
   @override
   Future<Contact> post(Contact? contact) async {
     final Database database = await _connection.connect;
-    final List<Contact> contactsListed = await _listNames(contact?.name);
-    if (contactsListed.isNotEmpty) throw ContactNameEqualException();
     final Contact contactInserted = Contact(0, contact?.name, contact?.description);
     contactInserted.id = await database.rawInsert(_ContactsSqliteSQL.INSERT, [contact?.name, contact?.description]);
     final ContactMeans contactMeans = ContactMeans(0, contact?.means?.first.name, contact?.means?.first.value, '',true);
@@ -52,7 +49,8 @@ class ContactSQLite implements Contacts {
     return contactInserted;
   }
 
-  Future<List<Contact>> _listNames(String? name) async {    
+  @override
+  Future<List<Contact>> listNames(String? name) async {
     final Database database = await _connection.connect;
     final List<Map<String, dynamic>> contactsMapped = await database.rawQuery(_ContactsSqliteSQL.SELECT_NAME, [name]);
     final List<Contact> contactsListed = [];
@@ -67,9 +65,6 @@ class ContactSQLite implements Contacts {
   @override
   Future<Contact> put(Contact? contact) async {
     final Database database = await _connection.connect;
-    final List<Contact> contactsListed = await _listNames(contact?.name);
-    final bool isNotEmptyContactsListed = contactsListed.where((i) => i.id != contact?.id).isNotEmpty;
-    if (isNotEmptyContactsListed)  throw ContactNameEqualException();
     final Contact contactUpdated = Contact(contact?.id, contact?.name, contact?.description);
     contactUpdated.means = contact?.means;
     final int rowsAffected = await database.rawUpdate(_ContactsSqliteSQL.UPDATE, [contact?.name, 
