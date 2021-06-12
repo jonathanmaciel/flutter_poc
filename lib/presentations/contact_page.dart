@@ -62,7 +62,7 @@ class _ContactFormState extends State<ContactForm> {
             listener: (context, state) async => state is ContactStateListener ? await _onModelStateListener(context, state) : null
           )
         ),
-        floatingActionButton: state is ContactAddedState ? null : _buildFloatingActionButton(state),
+        floatingActionButton: _buildFloatingActionButton(state),
         floatingActionButtonLocation: state is ContactAddedState ? null : FloatingActionButtonLocation.endFloat,
       );
     });
@@ -330,16 +330,19 @@ class _ContactFormState extends State<ContactForm> {
     );
   }
 
-  Padding _buildFloatingActionButton(ContactState state) {
+  Padding? _buildFloatingActionButton(ContactState state) {
     final ContactState content = (state is ContactStateListener) ? state.state : state;
-    return Padding(
-      padding: const EdgeInsets.only(right: 27, bottom: 13),
-      child: FloatingActionButton(
-        backgroundColor: Colors.blue,
-        onPressed: ()  => contactPageModel.add(ContactMeansDialogEvent(content)),
-        child: const Icon(Icons.add, color: Colors.white)
-      )
-    );
+    if (content is ContactViewedState) {
+      return Padding(
+          padding: const EdgeInsets.only(right: 27, bottom: 13),
+          child: FloatingActionButton(
+              backgroundColor: Colors.blue,
+              onPressed: ()  => contactPageModel.add(ContactMeansDialogEvent(content)),
+              child: const Icon(Icons.add, color: Colors.white)
+          )
+      );
+    }
+    return null;
   }
 }
 
