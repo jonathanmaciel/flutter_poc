@@ -4,14 +4,14 @@ part 'setting.g.dart';
 
 @JsonSerializable()
 class Setting {
-  
-  int? id;
-  
-  String? value;
 
   Setting(this.id, this.value);
 
   factory Setting.fromJson(Map<String, dynamic> json) => _$SettingFromJson(json);
+
+  int? id;
+
+  String? value;
 
   Map<String, dynamic> toJson() => _$SettingToJson(this);
 }

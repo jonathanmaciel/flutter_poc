@@ -1,19 +1,20 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_poc/domain/entities/setting.dart';
 import 'package:flutter_poc/domain/repositories/settings.dart';
 import 'package:flutter_poc/infrastructure/preference.dart';
 import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
-import 'dart:async';
-import 'dart:convert';
 
 @Named("settings") 
 @Singleton(as: Settings)
-@Environment('http')
+@Environment('REMOTE_HTTP')
 class SettingsHttp implements Settings {
 
-  final Preference _preference;
-
   SettingsHttp(@Named('preference') this._preference);
+
+  final Preference _preference;
 
   @override
   Future<Setting> item(int? id) async {

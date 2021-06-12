@@ -4,6 +4,8 @@ abstract class Contacts {
   
   Future<List<Contact>> list();
 
+  Future<Contact> item(int? id);
+
   Future<List<Contact>> listNames(String? name);
   
   Future<Contact> post(Contact? contact);

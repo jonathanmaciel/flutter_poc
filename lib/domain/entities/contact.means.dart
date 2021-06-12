@@ -6,6 +6,26 @@ part 'contact.means.g.dart';
 @JsonSerializable()
 class ContactMeans {
 
+  ContactMeans(this.id, this.name, this.value, this.description, this.isMain);
+
+  factory ContactMeans.fromJson(Map<String, dynamic> json) => _$ContactMeansFromJson(json);
+
+  factory ContactMeans.newInstanceFromJson(Contact? contact) {
+    final ContactMeans _instance = ContactMeans(0, '', '', '', false);
+    _instance.contact = contact;
+    return _instance;
+  }
+
+  factory ContactMeans.copy(ContactMeans? contactMeans) {
+    final ContactMeans _instance = ContactMeans(contactMeans?.id, contactMeans?.name,
+        contactMeans?.value, contactMeans?.description, contactMeans?.isMain);
+    if (contactMeans?.contact != null) {
+      _instance.contact = Contact(contactMeans?.contact?.id,
+          contactMeans?.contact?.name, contactMeans?.contact?.description);
+    }
+    return _instance;
+  }
+
   int? id;
   
   String? name;
@@ -17,21 +37,6 @@ class ContactMeans {
   bool? isMain;
   
   Contact? contact;
-
-  ContactMeans(this.id, this.name, this.value, this.description, this.isMain);
-
-  factory ContactMeans.fromJson(Map<String, dynamic> json) => _$ContactMeansFromJson(json);
-
-  factory ContactMeans.newInstance(Contact? contact) {
-    final ContactMeans _instance = ContactMeans(0, '', '', '', false);
-    _instance.contact = contact;
-    return _instance;
-  }
-
-  factory ContactMeans.clone(ContactMeans? contactMeans) {
-    return ContactMeans(contactMeans?.id, contactMeans?.name, contactMeans?.value, 
-        contactMeans?.description, contactMeans?.isMain);
-  }
 
   Map<String, dynamic> toJson() => _$ContactMeansToJson(this);
 }

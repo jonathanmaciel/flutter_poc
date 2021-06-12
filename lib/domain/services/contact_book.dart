@@ -3,23 +3,17 @@ import 'package:flutter_poc/domain/entities/contact.means.dart';
 
 abstract class ContactBook {
 
-  Future<dynamic> list();
+  Future<List<Contact>> list();
 
-  List<Contact> get listed;
-
-  int get count;
-
-  bool get isEmpty;
-
-  Contact elementAt(int i);
+  Future<Contact> item(int? id);
 
   Future<Contact> add(Contact? contact);
 
-  Future<dynamic> remove(Contact contact);
+  Future<bool> remove(Contact contact);
 
-  Future<bool?> removeContactMean(ContactMeans? contactMeans);
+  Future<bool> removeContactMeans(ContactMeans? contactMeans);
 
-  Future<dynamic> addContactMean(ContactMeans? contactMeans);
+  Future<ContactMeans> addContactMeans(ContactMeans? contactMeans);
 
   Future<bool> getInstructionFisrtContactAddStatus();
 

@@ -2,31 +2,41 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Preference {
 
-  static const String REMOTE_HTTP_URL = 'Infrastructure.Preference.REMOTE_HTTP_URL';
+  const Preference(this.sharedPreferences);
+
+  static const String remoteHttpUrlKey = 'Infrastructure.Preference.REMOTE_HTTP_URL';
   
-  static const String REMOTE_HTTP_URL_LOCALHOST = '';
+  static const String remoteHttpUrlLocalhost = '';
   
-  static const String ENVIRONMENT = 'Infrastructure.Preference.ENVIRONMENT';
+  static const String environmentKey = 'Infrastructure.Preference.ENVIRONMENT';
   
-  static const int ENVIRONMENT_LOCAL = 1;
+  static const int environmentLocalId = 1;
   
-  static const int ENVIRONMENT_REMOTE = 2;
+  static const int environmentRemoteHttpId = 2;
+
+  static const int environmentRemoteDioId = 3;
 
   final SharedPreferences sharedPreferences;
 
-  Preference(this.sharedPreferences);
+  String get httpHostURL => sharedPreferences.getString(remoteHttpUrlKey) ?? remoteHttpUrlLocalhost;
 
-  String get httpHostURL => sharedPreferences.getString(REMOTE_HTTP_URL) ?? REMOTE_HTTP_URL_LOCALHOST;
+  set httpHostURL(String value) => sharedPreferences.setString(remoteHttpUrlKey, value);
 
-  set httpHostURL(String value) => sharedPreferences.setString(REMOTE_HTTP_URL, value);
+  int get environment => sharedPreferences.getInt(environmentKey) ?? environmentLocalId;
 
-  int get environment => sharedPreferences.getInt(ENVIRONMENT) ?? ENVIRONMENT_LOCAL;
+  set environment(int value) => sharedPreferences.setInt(environmentKey, value);
 
-  set environment(int value) => sharedPreferences.setInt(ENVIRONMENT, value);
+  bool get isEnvironmentLocal => environment == environmentLocalId;
 
-  get isEnvironmentLocal => environment == ENVIRONMENT_LOCAL;
+  bool get isEnvironmentHttpApi => environment == environmentRemoteHttpId;
 
-  get isEnvironmentHttp => environment == ENVIRONMENT_REMOTE;
+  bool get isEnvironmentRemoteDioApi => environment == environmentRemoteDioId;
 
-  String findEnvironmentNameById() => environment == Preference.ENVIRONMENT_REMOTE ? 'http' : 'local';
+  String get currentEnvironment {
+    switch (environment) {
+      case Preference.environmentRemoteHttpId : return 'REMOTE_HTTP';
+      case Preference.environmentRemoteDioId : return 'REMOTE_DIO';
+      default: return 'LOCAL';
+    }
+  }
 }

@@ -1,27 +1,37 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_poc/infrastructure/preference.dart';
-import 'package:flutter_poc/presentations/commons.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_poc/infrastructure/preference.dart';
+import 'package:flutter_poc/main.dart';
+import 'package:flutter_poc/presentations/commons.dart';
 
-Future<bool?> showPreferencesDialog(BuildContext context, Preference preference) async {
-  bool? value = await showDialog(context: context, barrierDismissible: false, 
-    builder: (context) => PreferencesDialog(preference));
-  return value;
+Future<bool> showPreferencesDialog(BuildContext context) async {
+  final Preference preference = instanceLocator<Preference>('preference');
+  final int environment = preference.environment;
+  await showDialog(context: context, barrierDismissible: false, builder: (context) => PreferencesDialog(preference));
+  final int currentEnvironment = preference.environment;
+  final bool isEnvironmentUpated = environment != currentEnvironment;
+  await configureInstanceLocatorEnvironment(preference.sharedPreferences);
+  return isEnvironmentUpated;
 }
 
 class PreferencesDialog extends StatefulWidget {
-  
+
+  const PreferencesDialog(this._preference);
+
   final Preference _preference;
 
-  PreferencesDialog(this._preference);
-
   @override
-  State<StatefulWidget> createState() => _PreferencesDialogState(this._preference);
+  State<StatefulWidget> createState() => _PreferencesDialogState(_preference);
 }
 
 class _PreferencesDialogState extends State<PreferencesDialog> {
+
+  _PreferencesDialogState(this._preference) {
+    _radio = _preference.environment;
+  }
 
   final GlobalKey<FormState> formId = GlobalKey<FormState>();
   
@@ -31,16 +41,12 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
 
   bool _isHttpURLInvalid = false;
 
-  _PreferencesDialogState(this._preference) {
-    _radio = _preference.environment;
-  }
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Parametros'),
+      title: const Text('Parametros'),
       content: Container(
-        height: MediaQuery.of(context).size.height/3, 
+        height: MediaQuery.of(context).size.height / 3,
         width: MediaQuery.of(context).size.width - 20, 
         child: _buildForm(context)
       ),
@@ -48,24 +54,21 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
         Visibility(
           visible: _isHttpURLInvalid,
           child: TextButton(
-            child: Text('Cancelar', style: TextStyle(color: Colors.grey)),
-            onPressed: () async {
-              Navigator.of(context).pop(true);
-            }
-          )
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)))
         ),
         TextButton(
-          onPressed: () {
+          onPressed: () /* TODO */ {
             final bool? isValid = formId.currentState?.validate();
             setState(() { });
             if (isValid != null && isValid) {
               formId.currentState?.save();
-              _preference.environment = _radio??Preference.ENVIRONMENT_LOCAL;
+              _preference.environment = _radio??Preference.environmentLocalId;
               showSnackBar(context, 'Parametros atualizados');
               Navigator.of(context).pop(true);
             }
           }, 
-          child: Text('Atualizar')
+          child: const Text('Atualizar')
         )
       ],
     );
@@ -76,53 +79,62 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
       key: formId,
       child: Column(
         children: [
-          Text('Selecione o meio para manter/interagir com os dados na aplicacao:',
+          const Text('Selecione o meio para manter/interagir com os dados na aplicacao:',
           style: TextStyle(fontSize: 14, color: Colors.black)),
           Row(
             children: [
-              new Radio(
-                value: Preference.ENVIRONMENT_LOCAL,
+              Radio(
+                value: Preference.environmentLocalId,
                 groupValue: _radio,
-                onChanged: (int? value) => _handleRadioValueChange(value)
+                onChanged: _handleRadioValueChange
               ),
-              new Text(
-                'SQLite', style: new TextStyle(fontSize: 16.0, 
-                  fontWeight: _radio == Preference.ENVIRONMENT_LOCAL ? FontWeight.bold : FontWeight.normal,
-                  color: _radio == Preference.ENVIRONMENT_LOCAL ? Colors.blue : Colors.black
+              Text(
+                'SQLite',
+                style: TextStyle(fontSize: 16,
+                  fontWeight: _radio == Preference.environmentLocalId ? FontWeight.bold : FontWeight.normal,
+                  color: _radio == Preference.environmentLocalId ? Colors.blue : Colors.black
                 ),
               ),
-              new Radio(
-                value: Preference.ENVIRONMENT_REMOTE,
+              Radio(
+                value: Preference.environmentRemoteHttpId,
                 groupValue: _radio,
-                onChanged: (int? value) =>_handleRadioValueChange(value),
+                onChanged: _handleRadioValueChange,
               ),
-              new Text(
+              Text(
                 'HTTP',
-                style: new TextStyle(
-                  fontSize: 16.0,
-                  fontWeight: _radio == Preference.ENVIRONMENT_LOCAL ? FontWeight.normal : FontWeight.bold,
-                  color: _radio == Preference.ENVIRONMENT_LOCAL ? Colors.black : Colors.blue
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: _radio == Preference.environmentRemoteHttpId ? FontWeight.bold : FontWeight.normal,
+                  color: _radio == Preference.environmentRemoteHttpId ? Colors.blue : Colors.black
+                ),
+              ),
+              Radio(
+                value: Preference.environmentRemoteDioId,
+                groupValue: _radio,
+                onChanged: _handleRadioValueChange
+              ),
+              Text(
+                'DIO',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: _radio == Preference.environmentRemoteDioId ? FontWeight.bold : FontWeight.normal,
+                  color: _radio == Preference.environmentRemoteDioId ? Colors.blue : Colors.black
                 ),
               ),
             ],
           ),
           Container(
-            child: _radio == Preference.ENVIRONMENT_LOCAL
-                 ? Html(
-                    data: """
-                        <p>Um arquivo de banco de dados sera criado neste dispositivo e os dados
-                        serao tratados a partir de um repository SQL.</p>
-                        <p><i>Este metodo e suportado apenas em <br/><u>emuladores e dispositivos<u></i></p>
-                    """)
+            child: _radio == Preference.environmentLocalId
+                 ? Html(data: '<p>Um arquivo de banco de dados sera criado neste dispositivo e os dados '
+                              'serao tratados a partir de um repository SQL.</p> '
+                              '<p><i>Este metodo e suportado apenas em <br/><u>emuladores e dispositivos<u></i></p> '
+                   )
                  : Column(
-                     mainAxisAlignment: MainAxisAlignment.start,
                      crossAxisAlignment: CrossAxisAlignment.start,
                      children: [
-                       Html(
-                         data: """
-                             <p>Os dados serao tratados a partir de um repository HTTP.</p>
-                             <p><u>O <i>host</i> e a <i>porta</i> devem ser confirmados:</u></p>
-                         """),
+                       Html(data: '<p>Os dados serao tratados a partir de um repository HTTP.</p> '
+                                  '<p><u>O <i>host</i> e a <i>porta</i> devem ser confirmados:</u></p> '
+                       ),
                        SizedBox(
                          width: 200,
                          height: 40,
@@ -135,23 +147,23 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
                                fontStyle: FontStyle.italic, 
                                color: _isHttpURLInvalid ? Colors.red : Colors.grey
                              ),
-                             errorStyle: TextStyle(fontSize: 0, height: 0),
-                             enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),  
-                             focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),  
-                             errorBorder: _isHttpURLInvalid ? UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)) : UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)), 
-                             focusedErrorBorder: _isHttpURLInvalid ? UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)) : UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey))
+                             errorStyle: const TextStyle(fontSize: 0, height: 0),
+                             enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                             focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
+                             errorBorder: _isHttpURLInvalid ? const UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)) : const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                             focusedErrorBorder: _isHttpURLInvalid ? const UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)) : const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey))
                            ),
-                            style: TextStyle(fontSize: 14, color: Colors.black),
-                            validator: (newValue) => (_isHttpURLInvalid = (newValue?.trim().isEmpty??false)) ? '' : null,
+                            style: const TextStyle(fontSize: 14, color: Colors.black),
+                            validator: (newValue) => (_isHttpURLInvalid = newValue?.trim().isEmpty??false) ? '' : null,
                             onSaved: (newValue) => _preference.httpHostURL = newValue ?? '',
-                            onChanged: (value) {
+                            onChanged: (value) /* TODO */ {
                               if (_isHttpURLInvalid) {
                                 setState(() {
                                   _isHttpURLInvalid = false;
                                 });
                               }
                             },
-                            onTap: () {
+                            onTap: () /* TODO */ {
                               if (_isHttpURLInvalid) {
                                 setState(() {
                                   _isHttpURLInvalid = false;
@@ -171,7 +183,8 @@ class _PreferencesDialogState extends State<PreferencesDialog> {
   void _handleRadioValueChange(int? value) {
     setState(() {
       _radio = value;
-      if (value == Preference.ENVIRONMENT_LOCAL) _isHttpURLInvalid = false;
+      if (value == Preference.environmentLocalId) _isHttpURLInvalid = false;
     });
   }
 }
+
